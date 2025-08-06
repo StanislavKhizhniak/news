@@ -8,9 +8,10 @@ function LoopsPage() {
   const [currentAudio, setCurrentAudio] = useState(null);
   const [playingLoopId, setPlayingLoopId] = useState(null);
   const [audioLoading, setAudioLoading] = useState(false);
+  const [audioProgress, setAudioProgress] = useState(0);
   const audioRef = useRef(null);
 
-  const handlePlayAudio = (loopId, loopURL) => {
+  const handlePlayAudio = async (loopId, loopURL) => {
     // Остановить текущее воспроизведение
     if (audioRef.current) {
       audioRef.current.pause();
@@ -22,35 +23,145 @@ function LoopsPage() {
       setPlayingLoopId(null);
       setCurrentAudio(null);
       setAudioLoading(false);
+      setAudioProgress(0);
       return;
     }
 
-    // Начинаем воспроизведение нового лупа
-    setAudioLoading(true);
-    setCurrentAudio(loopURL);
-    setPlayingLoopId(loopId);
+    try {
+      setAudioLoading(true);
+      
+      // Если у нас есть временная ссылка, используем её напрямую
+      if (loopURL && (loopURL.startsWith('http') || loopURL.startsWith('https'))) {
+        console.log('Используем прямую ссылку:', loopURL);
+        setCurrentAudio(loopURL);
+        setPlayingLoopId(loopId);
+        setAudioLoading(false); // Сбрасываем загрузку после установки ссылки
+        return;
+      }
+      
+      // Проверяем, есть ли ссылка в других форматах
+      if (!loopURL && loopId) {
+        console.log('Ссылка не найдена в переданных данных');
+      }
+      
+      // Если у нас есть только ID лупа, получаем временную ссылку по имени файла
+      if (loopId) {
+        try {
+          // Найдем луп в данных, чтобы получить имя файла
+          const currentLoop = loops.find(loop => loop.loop?.loop_id === loopId);
+          
+          if (!currentLoop || !currentLoop.loop?.loop_name) {
+            throw new Error('Не удалось найти имя файла для лупа');
+          }
+          
+          const filename = currentLoop.loop.loop_name;
+          console.log('Получаем временную ссылку для файла:', filename);
+          
+          // Отправляем GET запрос с именем файла в URL
+          const url = `https://mycolconn.ru.tuna.am/loops/${encodeURIComponent(filename)}`;
+          console.log('Отправляем запрос на URL:', url);
+          
+          // Используем fetch для лучшего контроля над загрузкой
+          const response = await fetch(url, {
+            headers: {
+              'Accept': 'audio/mp3, */*'
+              // Убираем Range заголовок, позволяем серверу самому решать
+            }
+          });
+          
+          console.log('Статус ответа:', response.status);
+          console.log('Content-Type:', response.headers.get('content-type'));
+          console.log('Content-Length:', response.headers.get('content-length'));
+          console.log('Accept-Ranges:', response.headers.get('accept-ranges'));
+          console.log('Content-Range:', response.headers.get('content-range'));
+          console.log('Transfer-Encoding:', response.headers.get('transfer-encoding'));
+          
+          // Проверяем, является ли ответ аудио файлом
+          if (response.headers.get('content-type') && response.headers.get('content-type').includes('audio/')) {
+            console.log('Сервер возвращает аудио файл напрямую');
+            
+            // Проверяем поддержку чанков и частичных запросов
+            const acceptRanges = response.headers.get('accept-ranges');
+            const transferEncoding = response.headers.get('transfer-encoding');
+            const contentRange = response.headers.get('content-range');
+            
+            console.log('Сервер поддерживает частичные запросы:', acceptRanges);
+            console.log('Transfer-Encoding (чанки):', transferEncoding);
+            console.log('Content-Range:', contentRange);
+            
+            // Если сервер поддерживает чанки или частичные запросы
+            if (acceptRanges === 'bytes' || transferEncoding === 'chunked' || contentRange) {
+              console.log('Сервер поддерживает потоковую передачу, используем прямую ссылку');
+              setCurrentAudio(url);
+            } else {
+              console.log('Сервер не поддерживает потоковую передачу, но используем прямую ссылку');
+              setCurrentAudio(url);
+            }
+            
+            setPlayingLoopId(loopId);
+            setAudioLoading(false);
+          } else {
+            throw new Error('Сервер не вернул аудио файл');
+          }
+        } catch (error) {
+          console.error('Ошибка при получении временной ссылки:', error);
+          if (error.response) {
+            const status = error.response.status;
+            const message = error.response.data?.message || error.message;
+            throw new Error(`Ошибка сервера (${status}): ${message}`);
+          } else if (error.request) {
+            throw new Error('Сервер не отвечает. Проверьте подключение к интернету.');
+          } else {
+            throw new Error(`Ошибка запроса: ${error.message}`);
+          }
+        }
+      } else {
+        throw new Error('ID лупа не предоставлен');
+      }
+    } catch (error) {
+      console.error('Ошибка при получении временной ссылки:', error);
+      console.log('Loop ID:', loopId, 'Loop URL:', loopURL);
+      alert(`Ошибка при получении аудио файла: ${error.message}`);
+      setAudioLoading(false);
+      setPlayingLoopId(null);
+      setCurrentAudio(null);
+    }
   };
 
   const handleAudioEnded = () => {
+    console.log('Аудио воспроизведение завершено');
     setPlayingLoopId(null);
     setCurrentAudio(null);
     setAudioLoading(false);
+    setAudioProgress(0);
   };
 
-  const handleAudioError = () => {
-    console.error('Ошибка воспроизведения аудио');
+  const handleAudioError = (error) => {
+    console.error('Ошибка воспроизведения аудио:', error);
     setPlayingLoopId(null);
     setCurrentAudio(null);
     setAudioLoading(false);
-    alert('Ошибка воспроизведения аудио. Возможно, файл недоступен.');
+    setAudioProgress(0);
+    alert('Ошибка воспроизведения аудио. Возможно, файл недоступен или временная ссылка истекла.');
   };
 
   const handleAudioLoadStart = () => {
+    console.log('Начало загрузки аудио');
     setAudioLoading(true);
   };
 
   const handleAudioCanPlay = () => {
+    console.log('Аудио готово к воспроизведению');
     setAudioLoading(false);
+  };
+
+  const handleAudioProgress = () => {
+    if (audioRef.current) {
+      const progress = (audioRef.current.buffered.length > 0) 
+        ? (audioRef.current.buffered.end(audioRef.current.buffered.length - 1) / audioRef.current.duration) * 100
+        : 0;
+      setAudioProgress(progress);
+    }
   };
 
   useEffect(() => {
@@ -267,7 +378,20 @@ function LoopsPage() {
                     
                     <div className="flex space-x-2">
                       <button 
-                        onClick={() => handlePlayAudio(item.loop?.loop_id, item.loop?.loop_URL)} 
+                        onClick={() => {
+                          // Ищем временную ссылку в различных местах данных
+                          const tempUrl = item.loop?.temporary_url || 
+                                        item.loop?.loop_URL || 
+                                        item.loop?.audio_url ||
+                                        item.loop?.stream_url ||
+                                        item.loop?.url ||
+                                        item.temporary_url || 
+                                        item.audio_url ||
+                                        item.stream_url ||
+                                        item.url;
+                          
+                          handlePlayAudio(item.loop?.loop_id, tempUrl);
+                        }} 
                         disabled={audioLoading && playingLoopId === item.loop?.loop_id}
                         className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
                           playingLoopId === item.loop?.loop_id 
@@ -276,16 +400,42 @@ function LoopsPage() {
                         } ${audioLoading && playingLoopId === item.loop?.loop_id ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         {audioLoading && playingLoopId === item.loop?.loop_id 
-                          ? '⏳ Загрузка...' 
+                          ? `⏳ Загрузка ${Math.round(audioProgress)}%` 
                           : playingLoopId === item.loop?.loop_id 
                             ? '⏹️ Остановить' 
                             : '▶️ Слушать'
                         }
                       </button>
-                      <button className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                      <button 
+                        onClick={() => {
+                          // Здесь можно добавить функциональность скачивания
+                          const filename = item.loop?.loop_name;
+                          const downloadUrl = `https://mycolconn.ru.tuna.am/loops/${encodeURIComponent(filename)}`;
+                          console.log('Скачивание файла:', downloadUrl);
+                          
+                          // Создаем временную ссылку для скачивания
+                          const link = document.createElement('a');
+                          link.href = downloadUrl;
+                          link.download = filename;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                      >
                         Скачать
                       </button>
                     </div>
+                    
+                    {/* Информация о временной ссылке */}
+                    {(item.loop?.temporary_url || item.loop?.audio_url || item.loop?.stream_url || item.loop?.url || item.temporary_url || item.audio_url || item.stream_url || item.url) && (
+                      <div className="mt-2 text-xs text-gray-500 bg-yellow-50 p-2 rounded border border-yellow-200">
+                        <span className="flex items-center">
+                          <span className="mr-1">⏰</span>
+                          Временная ссылка для прослушивания
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -303,8 +453,12 @@ function LoopsPage() {
           onError={handleAudioError}
           onLoadStart={handleAudioLoadStart}
           onCanPlay={handleAudioCanPlay}
+          onProgress={handleAudioProgress}
           style={{ display: 'none' }}
           autoPlay
+          preload="metadata"
+          controls={false}
+          crossOrigin="anonymous"
         />
       )}
     </div>

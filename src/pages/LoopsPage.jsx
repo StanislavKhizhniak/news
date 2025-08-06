@@ -58,7 +58,7 @@ function LoopsPage() {
       try {
         setLoading(true);
         
-        const response = await axios.get('https://qwa0s7-93-81-193-225.ru.tuna.am/loops');
+        const response = await axios.get('https://mycolconn.ru.tuna.am/loops');
         let data = response.data;
         
         // Обработка различных форматов данных

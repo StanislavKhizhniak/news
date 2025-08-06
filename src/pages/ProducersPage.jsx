@@ -36,7 +36,7 @@ function ProducersPage() {
       try {
         setLoading(true);
         
-        const response = await axios.get('https://x9k7he-93-81-193-225.ru.tuna.am/producers/');
+        const response = await axios.get('https://mycolconn.ru.tuna.am/producers/');
         let data = response.data;
         
         // Обработка различных форматов данных

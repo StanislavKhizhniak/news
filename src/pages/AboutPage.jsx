@@ -1,6 +1,18 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 
 function AboutPage() {
+  const [audioError, setAudioError] = useState(false);
+  const audioRef = useRef(null);
+
+  const handleAudioError = () => {
+    setAudioError(true);
+    console.log('Ошибка загрузки аудио файла');
+  };
+
+  const handleAudioLoad = () => {
+    setAudioError(false);
+  };
+
   return (
     <div className="min-h-screen py-16">
       <div className="container mx-auto px-4">
@@ -10,11 +22,35 @@ function AboutPage() {
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Мы - команда энтузиастов, студенты-бауманцы, которые занимаются музыкой. Зная программирование, мы сделали площадку, которая позволит найти единомышленников и новые знакомства, коллабы.
           </p>
-          <audio
-  src="https://storage.yandexcloud.net/collab-connect-private/GTA%20VI%20-%20157%20Bmin%20%40gottherage.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=YCAJESRzvIHa7jfM_fR3wwHZM%2F20250806%2Fru-central1%2Fs3%2Faws4_request&X-Amz-Date=20250806T120534Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=2bcf9dec9bad83d8aace5fcf1291429ad4aec71d856ec6343895d5f585fe5d0c"
-  loop
-  controls
-></audio>
+          
+          {/* Audio Player */}
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold mb-4">Наша музыка</h3>
+            {!audioError ? (
+              <audio
+                ref={audioRef}
+                src="https://rus.hitmotop.com/get/music/20190305/Korol_i_SHUT_-_Lesnik_62571704.mp3"
+                loop
+                controls
+                onError={handleAudioError}
+                onLoadedData={handleAudioLoad}
+                className="mx-auto"
+                style={{ maxWidth: '400px', width: '100%' }}
+              />
+            ) : (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
+                <p className="text-red-600 text-sm">
+                  Аудио файл временно недоступен. Попробуйте позже.
+                </p>
+                <button 
+                  onClick={() => setAudioError(false)}
+                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                >
+                  Попробовать снова
+                </button>
+              </div>
+            )}
+          </div>
         </section>
 
         {/* Mission & Vision */}

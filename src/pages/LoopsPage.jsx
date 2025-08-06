@@ -9,6 +9,8 @@ function LoopsPage() {
   const [playingLoopId, setPlayingLoopId] = useState(null);
   const [audioLoading, setAudioLoading] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
+  const [downloadingLoopId, setDownloadingLoopId] = useState(null);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const audioRef = useRef(null);
 
   const handlePlayAudio = async (loopId, loopURL) => {
@@ -161,6 +163,87 @@ function LoopsPage() {
         ? (audioRef.current.buffered.end(audioRef.current.buffered.length - 1) / audioRef.current.duration) * 100
         : 0;
       setAudioProgress(progress);
+    }
+  };
+
+  const handleDownload = async (loopId, filename) => {
+    try {
+      setDownloadingLoopId(loopId);
+      console.log('Начинаем скачивание файла:', filename);
+      
+      const downloadUrl = `https://mycolconn.ru.tuna.am/loops/${encodeURIComponent(filename)}`;
+      
+      // Используем fetch для принудительного скачивания
+      console.log('Загружаем файл для скачивания...');
+      
+      const response = await fetch(downloadUrl);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      // Получаем размер файла для прогресса
+      const contentLength = response.headers.get('content-length');
+      const totalSize = contentLength ? parseInt(contentLength) : 0;
+      
+      console.log('Размер файла:', totalSize, 'байт');
+      
+      // Получаем файл как blob с отслеживанием прогресса
+      const reader = response.body.getReader();
+      const chunks = [];
+      let receivedLength = 0;
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) break;
+        
+        chunks.push(value);
+        receivedLength += value.length;
+        
+        // Обновляем прогресс
+        if (totalSize > 0) {
+          const progress = (receivedLength / totalSize) * 100;
+          setDownloadProgress(progress);
+          console.log(`Прогресс скачивания: ${Math.round(progress)}%`);
+        }
+      }
+      
+      // Собираем blob из чанков
+      const blob = new Blob(chunks, { type: 'audio/mp3' });
+      console.log('Файл загружен, размер:', blob.size, 'байт');
+      
+      // Создаем blob URL для скачивания
+      const blobUrl = URL.createObjectURL(blob);
+      
+      // Создаем ссылку для скачивания
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename; // Принудительное скачивание
+      link.style.display = 'none';
+      
+      // Добавляем в DOM и кликаем
+      document.body.appendChild(link);
+      link.click();
+      
+      // Удаляем ссылку из DOM
+      document.body.removeChild(link);
+      
+      // Очищаем blob URL через некоторое время
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+        console.log('Blob URL очищен');
+      }, 1000);
+      
+      console.log('Скачивание файла запущено:', filename);
+      alert(`Скачивание файла "${filename}" запущено!`);
+      
+    } catch (error) {
+      console.error('Ошибка при скачивании:', error);
+      alert(`Ошибка при скачивании файла: ${error.message}`);
+    } finally {
+      setDownloadingLoopId(null);
+      setDownloadProgress(0);
     }
   };
 
@@ -407,23 +490,18 @@ function LoopsPage() {
                         }
                       </button>
                       <button 
-                        onClick={() => {
-                          // Здесь можно добавить функциональность скачивания
-                          const filename = item.loop?.loop_name;
-                          const downloadUrl = `https://mycolconn.ru.tuna.am/loops/${encodeURIComponent(filename)}`;
-                          console.log('Скачивание файла:', downloadUrl);
-                          
-                          // Создаем временную ссылку для скачивания
-                          const link = document.createElement('a');
-                          link.href = downloadUrl;
-                          link.download = filename;
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        }}
-                        className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                        onClick={() => handleDownload(item.loop?.loop_id, item.loop?.loop_name)}
+                        disabled={downloadingLoopId === item.loop?.loop_id}
+                        className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                          downloadingLoopId === item.loop?.loop_id 
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white opacity-50 cursor-not-allowed' 
+                            : 'bg-gray-600 hover:bg-gray-700 text-white'
+                        }`}
                       >
-                        Скачать
+                        {downloadingLoopId === item.loop?.loop_id 
+                          ? `⏳ Скачивание ${Math.round(downloadProgress)}%` 
+                          : '📥 Скачать'
+                        }
                       </button>
                     </div>
                     

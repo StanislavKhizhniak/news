@@ -4,11 +4,8 @@ function Header({ currentPage, onPageChange }) {
   const menuItems = [
     { id: 'home', label: 'Главная', path: '/' },
     { id: 'about', label: 'О нас', path: '/about' },
-    { id: 'services', label: 'Услуги', path: '/services' },
-    { id: 'portfolio', label: 'Портфолио', path: '/portfolio' },
     { id: 'producers', label: 'Производители', path: '/producers' },
-    { id: 'loops', label: 'Лупы', path: '/loops' },
-    { id: 'contact', label: 'Контакты', path: '/contact' }
+    { id: 'loops', label: 'Лупы', path: '/loops' }
   ];
 
   return (

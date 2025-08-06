@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
-import ServicesPage from './pages/ServicesPage';
-import PortfolioPage from './pages/PortfolioPage';
-import ContactPage from './pages/ContactPage';
 import ProducersPage from './pages/ProducersPage';
 import LoopsPage from './pages/LoopsPage';
 import IntroAnimation from './application/IntroAnimation';
@@ -36,12 +33,6 @@ function App() {
         return <HomePage />;
       case 'about':
         return <AboutPage />;
-      case 'services':
-        return <ServicesPage />;
-      case 'portfolio':
-        return <PortfolioPage />;
-      case 'contact':
-        return <ContactPage />;
       case 'producers':
         return <ProducersPage />;
       case 'loops':

@@ -11,7 +11,7 @@ function AboutPage() {
             Мы - команда энтузиастов, студенты-бауманцы, которые занимаются музыкой. Зная программирование, мы сделали площадку, которая позволит найти единомышленников и новые знакомства, коллабы.
           </p>
           <audio
-  src="https://rus.hitmotop.com/get/music/20190305/Korol_i_SHut_-_Lesnik_62571704.mp3"
+  src="https://storage.yandexcloud.net/collab-connect-private/GTA%20VI%20-%20157%20Bmin%20%40gottherage.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=YCAJESRzvIHa7jfM_fR3wwHZM%2F20250806%2Fru-central1%2Fs3%2Faws4_request&X-Amz-Date=20250806T120534Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=2bcf9dec9bad83d8aace5fcf1291429ad4aec71d856ec6343895d5f585fe5d0c"
   loop
   controls
 ></audio>

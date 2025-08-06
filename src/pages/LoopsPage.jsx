@@ -1,17 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
 function LoopsPage() {
   const [loops, setLoops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentAudio, setCurrentAudio] = useState(null);
+  const [playingLoopId, setPlayingLoopId] = useState(null);
+  const [audioLoading, setAudioLoading] = useState(false);
+  const audioRef = useRef(null);
+
+  const handlePlayAudio = (loopId, loopURL) => {
+    // Остановить текущее воспроизведение
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+
+    // Если нажимаем на тот же луп, просто останавливаем
+    if (playingLoopId === loopId) {
+      setPlayingLoopId(null);
+      setCurrentAudio(null);
+      setAudioLoading(false);
+      return;
+    }
+
+    // Начинаем воспроизведение нового лупа
+    setAudioLoading(true);
+    setCurrentAudio(loopURL);
+    setPlayingLoopId(loopId);
+  };
+
+  const handleAudioEnded = () => {
+    setPlayingLoopId(null);
+    setCurrentAudio(null);
+    setAudioLoading(false);
+  };
+
+  const handleAudioError = () => {
+    console.error('Ошибка воспроизведения аудио');
+    setPlayingLoopId(null);
+    setCurrentAudio(null);
+    setAudioLoading(false);
+    alert('Ошибка воспроизведения аудио. Возможно, файл недоступен.');
+  };
+
+  const handleAudioLoadStart = () => {
+    setAudioLoading(true);
+  };
+
+  const handleAudioCanPlay = () => {
+    setAudioLoading(false);
+  };
 
   useEffect(() => {
     const fetchLoops = async () => {
       try {
         setLoading(true);
         
-        const response = await axios.get('https://s1bz53-93-81-193-225.ru.tuna.am/loops');
+        const response = await axios.get('https://qwa0s7-93-81-193-225.ru.tuna.am/loops');
         let data = response.data;
         
         // Обработка различных форматов данных
@@ -219,8 +266,21 @@ function LoopsPage() {
                     </div>
                     
                     <div className="flex space-x-2">
-                      <button className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
-                        Слушать
+                      <button 
+                        onClick={() => handlePlayAudio(item.loop?.loop_id, item.loop?.loop_URL)} 
+                        disabled={audioLoading && playingLoopId === item.loop?.loop_id}
+                        className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                          playingLoopId === item.loop?.loop_id 
+                            ? 'bg-red-600 hover:bg-red-700 text-white' 
+                            : 'bg-purple-600 hover:bg-purple-700 text-white'
+                        } ${audioLoading && playingLoopId === item.loop?.loop_id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        {audioLoading && playingLoopId === item.loop?.loop_id 
+                          ? '⏳ Загрузка...' 
+                          : playingLoopId === item.loop?.loop_id 
+                            ? '⏹️ Остановить' 
+                            : '▶️ Слушать'
+                        }
                       </button>
                       <button className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
                         Скачать
@@ -233,6 +293,20 @@ function LoopsPage() {
           )}
         </div>
       </section>
+      
+      {/* Скрытый аудио элемент для воспроизведения */}
+      {currentAudio && (
+        <audio
+          ref={audioRef}
+          src={currentAudio}
+          onEnded={handleAudioEnded}
+          onError={handleAudioError}
+          onLoadStart={handleAudioLoadStart}
+          onCanPlay={handleAudioCanPlay}
+          style={{ display: 'none' }}
+          autoPlay
+        />
+      )}
     </div>
   );
 }

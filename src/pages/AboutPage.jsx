@@ -10,6 +10,11 @@ function AboutPage() {
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Мы - команда энтузиастов, студенты-бауманцы, которые занимаются музыкой. Зная программирование, мы сделали площадку, которая позволит найти единомышленников и новые знакомства, коллабы.
           </p>
+          <audio
+  src="https://rus.hitmotop.com/get/music/20190305/Korol_i_SHut_-_Lesnik_62571704.mp3"
+  loop
+  controls
+></audio>
         </section>
 
         {/* Mission & Vision */}

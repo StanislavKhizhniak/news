@@ -5,6 +5,7 @@ import AboutPage from './pages/AboutPage';
 import ProducersPage from './pages/ProducersPage';
 import LoopsPage from './pages/LoopsPage';
 import IntroAnimation from './application/IntroAnimation';
+import { ThemeProvider } from './context/ThemeContext';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -48,9 +49,11 @@ function App() {
   }
 
   return (
-    <Layout currentPage={currentPage} onPageChange={setCurrentPage}>
-      {renderPage()}
-    </Layout>
+    <ThemeProvider>
+      <Layout currentPage={currentPage} onPageChange={setCurrentPage}>
+        {renderPage()}
+      </Layout>
+    </ThemeProvider>
   );
 }
 

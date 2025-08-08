@@ -27,16 +27,10 @@ function AboutPage() {
           <div className="mt-8">
             <h3 className="text-lg font-semibold mb-4">Наша музыка</h3>
             {!audioError ? (
-              <audio
-                ref={audioRef}
-                src="https://rus.hitmotop.com/get/music/20190305/Korol_i_SHUT_-_Lesnik_62571704.mp3"
-                loop
-                controls
-                onError={handleAudioError}
-                onLoadedData={handleAudioLoad}
-                className="mx-auto"
-                style={{ maxWidth: '400px', width: '100%' }}
-              />
+              <>
+                <iframe src="https://gifs.ru/embed/f45460ca32ea3100f0916b7477822d0b6bc3e1dd9727d4d7b04702c5d229f62f" width="480" height="480" frameBorder="0" allowFullScreen></iframe>
+                <p><a href="https://gifs.ru/gifs/40819">via GIFS.RU</a></p>
+              </>
             ) : (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
                 <p className="text-red-600 text-sm">

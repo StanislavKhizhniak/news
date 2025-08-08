@@ -13,16 +13,6 @@ function Footer() {
           </div>
           
           <div>
-            <h3 className="text-xl font-bold mb-4">Услуги</h3>
-            <ul className="space-y-2 text-gray-300">
-              <li>Веб-разработка</li>
-              <li>Мобильные приложения</li>
-              <li>UI/UX дизайн</li>
-              <li>Консультации</li>
-            </ul>
-          </div>
-          
-          <div>
             <h3 className="text-xl font-bold mb-4">Контакты</h3>
             <ul className="space-y-2 text-gray-300">
               <li>Email: info@company.com</li>
@@ -54,7 +44,7 @@ function Footer() {
         </div>
         
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
-          <p>&copy; 2024 Компания. Все права защищены.</p>
+          <p>&copy; 2025 Компания. Все права защищены.</p>
         </div>
       </div>
     </footer>

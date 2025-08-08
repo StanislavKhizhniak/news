@@ -6,4 +6,118 @@
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+
+  /* Основные цвета */
+  --color-primary: #3b82f6; /* blue-500 */
+  --color-primary-hover: #2563eb; /* blue-600 */
+  --color-secondary: #8b5cf6; /* purple-500 */
+  --color-secondary-hover: #7c3aed; /* purple-600 */
+  
+  /* Фоны */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f9fafb; /* gray-50 */
+  --color-bg-card: #ffffff;
+  --color-bg-header: #ffffff;
+  
+  /* Текст */
+  --color-text-primary: #1f2937; /* gray-800 */
+  --color-text-secondary: #6b7280; /* gray-500 */
+  --color-text-muted: #9ca3af; /* gray-400 */
+  --color-text-white: #ffffff;
+  
+  /* Границы */
+  --color-border: #e5e7eb; /* gray-200 */
+  --color-border-hover: #d1d5db; /* gray-300 */
+  
+  /* Статусы */
+  --color-success: #10b981; /* green-500 */
+  --color-success-light: #d1fae5; /* green-100 */
+  --color-success-dark: #065f46; /* green-800 */
+  --color-error: #ef4444; /* red-500 */
+  --color-error-light: #fee2e2; /* red-100 */
+  --color-error-dark: #991b1b; /* red-800 */
+  --color-warning: #f59e0b; /* yellow-500 */
+  --color-warning-light: #fef3c7; /* yellow-100 */
+  --color-warning-dark: #92400e; /* yellow-800 */
+  
+  /* Жанры музыки */
+  --color-genre-house: #3b82f6; /* blue-500 */
+  --color-genre-techno: #8b5cf6; /* purple-500 */
+  --color-genre-dnb: #10b981; /* green-500 */
+  --color-genre-hiphop: #f97316; /* orange-500 */
+  --color-genre-trap: #ef4444; /* red-500 */
+  --color-genre-dubstep: #eab308; /* yellow-500 */
+  
+  /* Ранги */
+  --color-rank-1: #eab308; /* yellow-500 */
+  --color-rank-2: #9ca3af; /* gray-400 */
+  --color-rank-3: #f97316; /* orange-500 */
+  
+  /* Градиенты */
+  --gradient-primary: linear-gradient(to right, #3b82f6, #8b5cf6);
+  --gradient-secondary: linear-gradient(to right, #8b5cf6, #ec4899);
+  --gradient-hero: linear-gradient(to right, #3b82f6, #8b5cf6);
+  --gradient-avatar: linear-gradient(to bottom right, #8b5cf6, #ec4899);
+  
+  /* Тени */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
+
+/* Темная тема */
+.dark {
+  color-scheme: dark;
+  
+  /* Фоны */
+  --color-bg-primary: #111827; /* gray-900 */
+  --color-bg-secondary: #1f2937; /* gray-800 */
+  --color-bg-card: #1f2937; /* gray-800 */
+  --color-bg-header: #111827; /* gray-900 */
+  
+  /* Текст */
+  --color-text-primary: #f9fafb; /* gray-50 */
+  --color-text-secondary: #d1d5db; /* gray-300 */
+  --color-text-muted: #9ca3af; /* gray-400 */
+  
+  /* Границы */
+  --color-border: #374151; /* gray-700 */
+  --color-border-hover: #4b5563; /* gray-600 */
+}
+
+/* Плавные переходы для всех элементов */
+* {
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+
+/* Утилитарные классы для использования CSS переменных */
+.bg-primary { background-color: var(--color-primary); }
+.bg-secondary { background-color: var(--color-secondary); }
+.bg-card { background-color: var(--color-bg-card); }
+.bg-header { background-color: var(--color-bg-header); }
+
+.text-primary { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-muted { color: var(--color-text-muted); }
+
+.border-primary { border-color: var(--color-border); }
+.border-hover { border-color: var(--color-border-hover); }
+
+/* Жанры */
+.genre-house { background-color: var(--color-genre-house); }
+.genre-techno { background-color: var(--color-genre-techno); }
+.genre-dnb { background-color: var(--color-genre-dnb); }
+.genre-hiphop { background-color: var(--color-genre-hiphop); }
+.genre-trap { background-color: var(--color-genre-trap); }
+.genre-dubstep { background-color: var(--color-genre-dubstep); }
+
+/* Ранги */
+.rank-1 { background-color: var(--color-rank-1); }
+.rank-2 { background-color: var(--color-rank-2); }
+.rank-3 { background-color: var(--color-rank-3); }
+
+/* Градиенты */
+.gradient-primary { background: var(--gradient-primary); }
+.gradient-secondary { background: var(--gradient-secondary); }
+.gradient-hero { background: var(--gradient-hero); }
+.gradient-avatar { background: var(--gradient-avatar); }

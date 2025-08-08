@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import LoopCard from '../components/LoopCard';
 
 function LoopsPage() {
   const [loops, setLoops] = useState([]);
@@ -11,6 +12,7 @@ function LoopsPage() {
   const [audioProgress, setAudioProgress] = useState(0);
   const [downloadingLoopId, setDownloadingLoopId] = useState(null);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [viewMode, setViewMode] = useState('detailed'); // 'detailed' или 'compact'
   const audioRef = useRef(null);
 
   const handlePlayAudio = async (loopId, loopURL) => {
@@ -37,13 +39,8 @@ function LoopsPage() {
         console.log('Используем прямую ссылку:', loopURL);
         setCurrentAudio(loopURL);
         setPlayingLoopId(loopId);
-        setAudioLoading(false); // Сбрасываем загрузку после установки ссылки
+        setAudioLoading(false);
         return;
-      }
-      
-      // Проверяем, есть ли ссылка в других форматах
-      if (!loopURL && loopId) {
-        console.log('Ссылка не найдена в переданных данных');
       }
       
       // Если у нас есть только ID лупа, получаем временную ссылку по имени файла
@@ -59,47 +56,24 @@ function LoopsPage() {
           const filename = currentLoop.loop.loop_name;
           console.log('Получаем временную ссылку для файла:', filename);
           
-          // Отправляем GET запрос с именем файла в URL
-          const url = `https://mycolconn.ru.tuna.am/loops/${encodeURIComponent(filename)}`;
-          console.log('Отправляем запрос на URL:', url);
+          // Отправляем GET запрос с именем файла в URL (без параметра download)
+          const url = `https://mycollabs.ru.tuna.am/loops/${encodeURIComponent(filename)}`;
+          console.log('Отправляем запрос на URL для воспроизведения:', url);
           
           // Используем fetch для лучшего контроля над загрузкой
           const response = await fetch(url, {
             headers: {
               'Accept': 'audio/mp3, */*'
-              // Убираем Range заголовок, позволяем серверу самому решать
             }
           });
           
           console.log('Статус ответа:', response.status);
           console.log('Content-Type:', response.headers.get('content-type'));
-          console.log('Content-Length:', response.headers.get('content-length'));
-          console.log('Accept-Ranges:', response.headers.get('accept-ranges'));
-          console.log('Content-Range:', response.headers.get('content-range'));
-          console.log('Transfer-Encoding:', response.headers.get('transfer-encoding'));
           
           // Проверяем, является ли ответ аудио файлом
           if (response.headers.get('content-type') && response.headers.get('content-type').includes('audio/')) {
             console.log('Сервер возвращает аудио файл напрямую');
-            
-            // Проверяем поддержку чанков и частичных запросов
-            const acceptRanges = response.headers.get('accept-ranges');
-            const transferEncoding = response.headers.get('transfer-encoding');
-            const contentRange = response.headers.get('content-range');
-            
-            console.log('Сервер поддерживает частичные запросы:', acceptRanges);
-            console.log('Transfer-Encoding (чанки):', transferEncoding);
-            console.log('Content-Range:', contentRange);
-            
-            // Если сервер поддерживает чанки или частичные запросы
-            if (acceptRanges === 'bytes' || transferEncoding === 'chunked' || contentRange) {
-              console.log('Сервер поддерживает потоковую передачу, используем прямую ссылку');
-              setCurrentAudio(url);
-            } else {
-              console.log('Сервер не поддерживает потоковую передачу, но используем прямую ссылку');
-              setCurrentAudio(url);
-            }
-            
+            setCurrentAudio(url);
             setPlayingLoopId(loopId);
             setAudioLoading(false);
           } else {
@@ -171,10 +145,11 @@ function LoopsPage() {
       setDownloadingLoopId(loopId);
       console.log('Начинаем скачивание файла:', filename);
       
-      const downloadUrl = `https://mycolconn.ru.tuna.am/loops/${encodeURIComponent(filename)}`;
+      // Используем URL с параметром download=True
+      const downloadUrl = `https://mycollabs.ru.tuna.am/loops/${encodeURIComponent(filename)}?download=True`;
       
       // Используем fetch для принудительного скачивания
-      console.log('Загружаем файл для скачивания...');
+      console.log('Загружаем файл для скачивания с параметром download=True...');
       
       const response = await fetch(downloadUrl);
       
@@ -252,7 +227,7 @@ function LoopsPage() {
       try {
         setLoading(true);
         
-        const response = await axios.get('https://mycolconn.ru.tuna.am/loops');
+        const response = await axios.get('https://mycollabs.ru.tuna.am/loops');
         let data = response.data;
         
         // Обработка различных форматов данных
@@ -349,9 +324,41 @@ function LoopsPage() {
       </section>
 
       {/* Loops List */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Доступные лупы</h2>
+      <section className="py-8 sm:py-16 overflow-visible">
+        <div className="container mx-auto px-4 sm:px-6 overflow-visible">
+          <div className="flex flex-col sm:flex-row items-center justify-between mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-0">Доступные лупы</h2>
+            
+            {/* Переключатель стилей */}
+            <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('detailed')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'detailed'
+                    ? 'bg-white text-purple-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <span className="flex items-center">
+                  <span className="mr-2">📋</span>
+                  Подробно
+                </span>
+              </button>
+              <button
+                onClick={() => setViewMode('compact')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'compact'
+                    ? 'bg-white text-purple-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <span className="flex items-center">
+                  <span className="mr-2">📊</span>
+                  Компактно
+                </span>
+              </button>
+            </div>
+          </div>
           
           {!Array.isArray(loops) || loops.length === 0 ? (
             <div className="text-center py-12">
@@ -365,157 +372,24 @@ function LoopsPage() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className={`overflow-visible ${viewMode === 'compact' 
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" 
+              : "grid grid-cols-1 gap-6 max-w-4xl mx-auto"
+            }`}>
               {loops.map((item, index) => (
-                <div key={item.loop?.loop_id || index} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="p-6">
-                    <div className="flex items-center mb-4">
-                      <div className="w-16 h-16 rounded-full overflow-hidden mr-4">
-                        <picture>
-                          <source 
-                            srcSet={item.user?.avatar_URL?.replace(/\.(jpg|jpeg|png|gif|bmp|tiff)$/i, '.webp') || '/images/default-avatar.webp'} 
-                            type="image/webp"
-                          />
-                          <source 
-                            srcSet={item.user?.avatar_URL?.replace(/\.(jpg|jpeg|png|gif|bmp|tiff)$/i, '.avif') || '/images/default-avatar.avif'} 
-                            type="image/avif"
-                          />
-                          <source 
-                            srcSet={item.user?.avatar_URL?.replace(/\.(webp|avif|gif|bmp|tiff)$/i, '.jpg') || '/images/default-avatar.jpg'} 
-                            type="image/jpeg"
-                          />
-                          <source 
-                            srcSet={item.user?.avatar_URL?.replace(/\.(webp|avif|jpg|jpeg|gif|bmp|tiff)$/i, '.png') || '/images/default-avatar.png'} 
-                            type="image/png"
-                          />
-                          <img 
-                            src={item.user?.avatar_URL || '/images/default-avatar.jpg'} 
-                            alt={item.user?.nickname || 'User'}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'block';
-                            }}
-                          />
-                        </picture>
-                        <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg" style={{display: 'none'}}>
-                          {item.user?.nickname?.charAt(0)?.toUpperCase() || 'U'}
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-xl font-semibold text-gray-800">
-                          {item.loop?.loop_name || 'Без названия'}
-                        </h3>
-                        <p className="text-sm text-gray-500">{item.user?.nickname || 'Неизвестный артист'}</p>
-                        {item.user?.is_billboard_producer && (
-                          <span className="inline-block bg-yellow-500 text-white text-xs px-2 py-1 rounded-full mt-1">
-                            Billboard Producer
-                          </span>
-                        )}
-                        {item.user?.status && item.user.status !== '[none]' && (
-                          <span className={`inline-block text-xs px-2 py-1 rounded-full mt-1 ml-1 ${
-                            item.user.status === 'PLATINUM' ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-800'
-                          }`}>
-                            {item.user.status}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div className="text-center p-3 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-500 mb-1">BPM</p>
-                        <p className="font-semibold text-gray-800">{item.loop?.bpm || 'N/A'}</p>
-                      </div>
-                      <div className="text-center p-3 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-500 mb-1">Тональность</p>
-                        <p className="font-semibold text-gray-800">{item.loop?.key || 'N/A'}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between items-center mb-4 text-sm text-gray-500">
-                      <span>Загружено: {new Date(item.loop?.uploaded_at).toLocaleDateString('ru-RU')}</span>
-                      {item.loop?.need_labs && (
-                        <span className="bg-red-500 text-white px-2 py-1 rounded text-xs">
-                          Требует Labs
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex space-x-4 text-sm">
-                        <div className="flex items-center">
-                          <span className="text-green-600 mr-1">👍</span>
-                          <span>{item.likes || 0}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <span className="text-red-600 mr-1">👎</span>
-                          <span>{item.dislikes || 0}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <span className="text-purple-600 mr-1">⭐</span>
-                          <span>{item.superlikes || 0}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex space-x-2">
-                      <button 
-                        onClick={() => {
-                          // Ищем временную ссылку в различных местах данных
-                          const tempUrl = item.loop?.temporary_url || 
-                                        item.loop?.loop_URL || 
-                                        item.loop?.audio_url ||
-                                        item.loop?.stream_url ||
-                                        item.loop?.url ||
-                                        item.temporary_url || 
-                                        item.audio_url ||
-                                        item.stream_url ||
-                                        item.url;
-                          
-                          handlePlayAudio(item.loop?.loop_id, tempUrl);
-                        }} 
-                        disabled={audioLoading && playingLoopId === item.loop?.loop_id}
-                        className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
-                          playingLoopId === item.loop?.loop_id 
-                            ? 'bg-red-600 hover:bg-red-700 text-white' 
-                            : 'bg-purple-600 hover:bg-purple-700 text-white'
-                        } ${audioLoading && playingLoopId === item.loop?.loop_id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        {audioLoading && playingLoopId === item.loop?.loop_id 
-                          ? `⏳ Загрузка ${Math.round(audioProgress)}%` 
-                          : playingLoopId === item.loop?.loop_id 
-                            ? '⏹️ Остановить' 
-                            : '▶️ Слушать'
-                        }
-                      </button>
-                      <button 
-                        onClick={() => handleDownload(item.loop?.loop_id, item.loop?.loop_name)}
-                        disabled={downloadingLoopId === item.loop?.loop_id}
-                        className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
-                          downloadingLoopId === item.loop?.loop_id 
-                            ? 'bg-blue-600 hover:bg-blue-700 text-white opacity-50 cursor-not-allowed' 
-                            : 'bg-gray-600 hover:bg-gray-700 text-white'
-                        }`}
-                      >
-                        {downloadingLoopId === item.loop?.loop_id 
-                          ? `⏳ Скачивание ${Math.round(downloadProgress)}%` 
-                          : '📥 Скачать'
-                        }
-                      </button>
-                    </div>
-                    
-                    {/* Информация о временной ссылке */}
-                    {(item.loop?.temporary_url || item.loop?.audio_url || item.loop?.stream_url || item.loop?.url || item.temporary_url || item.audio_url || item.stream_url || item.url) && (
-                      <div className="mt-2 text-xs text-gray-500 bg-yellow-50 p-2 rounded border border-yellow-200">
-                        <span className="flex items-center">
-                          <span className="mr-1">⏰</span>
-                          Временная ссылка для прослушивания
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <LoopCard
+                  key={item.loop?.loop_id || index}
+                  item={item}
+                  index={index}
+                  playingLoopId={playingLoopId}
+                  audioLoading={audioLoading}
+                  audioProgress={audioProgress}
+                  downloadingLoopId={downloadingLoopId}
+                  downloadProgress={downloadProgress}
+                  onPlayAudio={handlePlayAudio}
+                  onDownload={handleDownload}
+                  compact={viewMode === 'compact'}
+                />
               ))}
             </div>
           )}

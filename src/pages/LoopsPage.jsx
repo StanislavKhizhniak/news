@@ -19,8 +19,8 @@ function LoopsPage() {
   const [hasMore, setHasMore] = useState(true);
   const audioRef = useRef(null);
 
-  const PAGE_SIZE_DETAILED = 15;
-  const PAGE_SIZE_COMPACT = 45;
+  const PAGE_SIZE_DETAILED = 3;
+  const PAGE_SIZE_COMPACT = 6;
   const CACHE_CHUNK_DETAILED = 60; // грузим в кэш
   const CACHE_CHUNK_COMPACT = 180;
 

@@ -97,3 +97,4 @@ export const setCSSVariable = (variableName, value) => {
   document.documentElement.style.setProperty(variableName, value);
 };
 
+

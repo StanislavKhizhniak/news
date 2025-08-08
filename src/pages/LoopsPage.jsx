@@ -17,6 +17,7 @@ function LoopsPage() {
   const [visibleCount, setVisibleCount] = useState(15); // сколько показываем на странице
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const audioRef = useRef(null);
 
   const PAGE_SIZE_DETAILED = 3;
@@ -41,6 +42,54 @@ function LoopsPage() {
       processedData = [];
     }
     return processedData;
+  };
+
+  const dedupeLoops = (items) => {
+    const seen = new Set();
+    const unique = [];
+    for (const item of items || []) {
+      const key = item?.loop?.loop_id ?? item?.loop?.loop_name ?? item?.id ?? JSON.stringify(item);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unique.push(item);
+    }
+    return unique;
+  };
+
+  const fetchLoopsPage = async (page, limit) => {
+    const base = `https://mycollabs.ru.tuna.am/loops`;
+    const candidates = [
+      `${base}?page=${page}&page_size=${limit}`,
+      `${base}?page=${page}&per_page=${limit}`,
+      `${base}?page=${page}&size=${limit}`,
+    ];
+
+    let lastErr = null;
+    for (const url of candidates) {
+      try {
+        const response = await axios.get(url);
+        return processIncomingData(response.data);
+      } catch (err) {
+        const status = err?.response?.status;
+        if (status === 400 || status === 404 || status === 422) {
+          lastErr = err;
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    // Фоллбек: для первой страницы попробуем базовый эндпоинт без параметров
+    if (page === 1) {
+      try {
+        const response = await axios.get(base);
+        return processIncomingData(response.data);
+      } catch (err) {
+        throw lastErr || err;
+      }
+    }
+    // Для страниц > 1 вернём пусто, чтобы корректно остановить пагинацию
+    return [];
   };
 
   const fetchLoopsChunk = async (offset, limit) => {
@@ -302,11 +351,14 @@ function LoopsPage() {
         setIsFetchingMore(false);
         setHasMore(true);
         setLoops([]);
+        setCurrentPage(1);
         const pageSize = getPageSize();
         const chunkSize = getCacheChunkSize();
         setVisibleCount(pageSize);
-        const chunk = await fetchLoopsChunk(0, chunkSize);
-        setLoops(chunk);
+        const chunk = await fetchLoopsPage(1, chunkSize);
+        const unique = dedupeLoops(chunk);
+        setLoops(unique);
+        setCurrentPage(2);
         if (!chunk || chunk.length === 0) {
           setHasMore(false);
         }
@@ -333,13 +385,15 @@ function LoopsPage() {
     if (!hasMore || isFetchingMore) return;
     try {
       setIsFetchingMore(true);
-      const nextOffset = loops.length;
       const chunkSize = getCacheChunkSize();
-      const nextChunk = await fetchLoopsChunk(nextOffset, chunkSize);
-      const newAll = [...loops, ...nextChunk];
-      setLoops(newAll);
-      if (!nextChunk || nextChunk.length === 0) {
+      const nextChunk = await fetchLoopsPage(currentPage, chunkSize);
+      const merged = dedupeLoops([...loops, ...(nextChunk || [])]);
+      const noGrowth = merged.length === loops.length;
+      setLoops(merged);
+      if (!nextChunk || nextChunk.length === 0 || noGrowth) {
         setHasMore(false);
+      } else {
+        setCurrentPage((prev) => prev + 1);
       }
       setVisibleCount((prev) => prev + pageSize);
     } catch (err) {
@@ -459,7 +513,7 @@ function LoopsPage() {
             }`}>
               {loops.slice(0, visibleCount).map((item, index) => (
                 <LoopCard
-                  key={item.loop?.loop_id || index}
+                  key={`${item?.loop?.loop_id ?? item?.loop?.loop_name ?? 'i'}-${index}`}
                   item={item}
                   index={index}
                   playingLoopId={playingLoopId}

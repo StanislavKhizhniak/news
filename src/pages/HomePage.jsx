@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import WeeklyTrackCard from '../components/WeeklyTrackCard';
 import ProducerRequestCard from '../components/ProducerRequestCard';
+import PremiumModal from '../components/PremiumModal';
 
 function HomePage() {
   // Моковые данные для лучших треков недели (позже будет заменено на реальный API)
@@ -185,6 +186,9 @@ function HomePage() {
           </div>
         </div>
       </section>
+      
+      {/* Premium Modal */}
+      {/* <PremiumModal /> */}
     </div>
   );
 }

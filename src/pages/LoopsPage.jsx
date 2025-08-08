@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import LoopCard from '../components/LoopCard';
+import PremiumModal from '../components/PremiumModal';
 
 function LoopsPage() {
-  const [loops, setLoops] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loops, setLoops] = useState([]); // кэш загруженных лупов
+  const [loading, setLoading] = useState(true); // первоначальная загрузка
   const [error, setError] = useState(null);
   const [currentAudio, setCurrentAudio] = useState(null);
   const [playingLoopId, setPlayingLoopId] = useState(null);
@@ -13,7 +14,41 @@ function LoopsPage() {
   const [downloadingLoopId, setDownloadingLoopId] = useState(null);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [viewMode, setViewMode] = useState('detailed'); // 'detailed' или 'compact'
+  const [visibleCount, setVisibleCount] = useState(15); // сколько показываем на странице
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const audioRef = useRef(null);
+
+  const PAGE_SIZE_DETAILED = 15;
+  const PAGE_SIZE_COMPACT = 45;
+  const CACHE_CHUNK_DETAILED = 60; // грузим в кэш
+  const CACHE_CHUNK_COMPACT = 180;
+
+  const getPageSize = () => (viewMode === 'compact' ? PAGE_SIZE_COMPACT : PAGE_SIZE_DETAILED);
+  const getCacheChunkSize = () => (viewMode === 'compact' ? CACHE_CHUNK_COMPACT : CACHE_CHUNK_DETAILED);
+
+  const processIncomingData = (data) => {
+    let processedData = data;
+    if (data && data.loops && Array.isArray(data.loops)) {
+      processedData = data.loops;
+    } else if (data && data.data && Array.isArray(data.data)) {
+      processedData = data.data;
+    } else if (data && typeof data === 'object' && !Array.isArray(data)) {
+      processedData = Object.values(data);
+    } else if (Array.isArray(data)) {
+      processedData = data;
+    } else {
+      processedData = [];
+    }
+    return processedData;
+  };
+
+  const fetchLoopsChunk = async (offset, limit) => {
+    // Предполагаем, что бэкенд поддерживает offset/limit
+    const url = `https://mycollabs.ru.tuna.am/loops?offset=${offset}&limit=${limit}`;
+    const response = await axios.get(url);
+    return processIncomingData(response.data);
+  };
 
   const handlePlayAudio = async (loopId, loopURL) => {
     // Остановить текущее воспроизведение
@@ -222,52 +257,62 @@ function LoopsPage() {
     }
   };
 
+  // Первичная загрузка и перезагрузка при смене режима отображения
   useEffect(() => {
-    const fetchLoops = async () => {
+    const init = async () => {
       try {
         setLoading(true);
-        
-        const response = await axios.get('https://mycollabs.ru.tuna.am/loops');
-        let data = response.data;
-        
-        // Обработка различных форматов данных
-        let processedData = data;
-        
-        // Если данные приходят в объекте с ключом 'loops'
-        if (data && data.loops && Array.isArray(data.loops)) {
-          processedData = data.loops;
-        }
-        // Если данные приходят в объекте с ключом 'data'
-        else if (data && data.data && Array.isArray(data.data)) {
-          processedData = data.data;
-        }
-        // Если данные приходят как объект, преобразуем в массив
-        else if (data && typeof data === 'object' && !Array.isArray(data)) {
-          processedData = Object.values(data);
-        }
-        // Если данные уже массив
-        else if (Array.isArray(data)) {
-          processedData = data;
-        }
-        // Если данные не в ожидаемом формате, создаем пустой массив
-        else {
-          console.warn('Неожиданный формат данных:', data);
-          processedData = [];
-        }
-        
-        setLoops(processedData);
         setError(null);
+        setIsFetchingMore(false);
+        setHasMore(true);
+        setLoops([]);
+        const pageSize = getPageSize();
+        const chunkSize = getCacheChunkSize();
+        setVisibleCount(pageSize);
+        const chunk = await fetchLoopsChunk(0, chunkSize);
+        setLoops(chunk);
+        if (!chunk || chunk.length === 0) {
+          setHasMore(false);
+        }
       } catch (err) {
         console.error('Ошибка при получении данных:', err);
         setError('Не удалось загрузить данные с сервера');
         setLoops([]);
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
     };
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode]);
 
-    fetchLoops();
-  }, []);
+  const handleLoadMore = async () => {
+    const pageSize = getPageSize();
+    const needMoreFromCache = visibleCount + pageSize > loops.length;
+    if (!needMoreFromCache) {
+      setVisibleCount((prev) => prev + pageSize);
+      return;
+    }
+    if (!hasMore || isFetchingMore) return;
+    try {
+      setIsFetchingMore(true);
+      const nextOffset = loops.length;
+      const chunkSize = getCacheChunkSize();
+      const nextChunk = await fetchLoopsChunk(nextOffset, chunkSize);
+      const newAll = [...loops, ...nextChunk];
+      setLoops(newAll);
+      if (!nextChunk || nextChunk.length === 0) {
+        setHasMore(false);
+      }
+      setVisibleCount((prev) => prev + pageSize);
+    } catch (err) {
+      console.error('Ошибка подгрузки данных:', err);
+      setHasMore(false);
+    } finally {
+      setIsFetchingMore(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -376,7 +421,7 @@ function LoopsPage() {
               ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" 
               : "grid grid-cols-1 gap-6 max-w-4xl mx-auto"
             }`}>
-              {loops.map((item, index) => (
+              {loops.slice(0, visibleCount).map((item, index) => (
                 <LoopCard
                   key={item.loop?.loop_id || index}
                   item={item}
@@ -391,6 +436,24 @@ function LoopsPage() {
                   compact={viewMode === 'compact'}
                 />
               ))}
+            </div>
+          )}
+          {/* Ещё лупы */}
+          {Array.isArray(loops) && loops.length > 0 && (
+            <div className="mt-10 flex justify-center">
+              <button
+                onClick={handleLoadMore}
+                disabled={isFetchingMore || !hasMore}
+                className={`px-6 py-3 rounded-lg font-semibold transition-colors shadow-sm ${
+                  isFetchingMore
+                    ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                    : hasMore
+                    ? 'bg-purple-600 text-white hover:bg-purple-700'
+                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                {isFetchingMore ? 'Загружаем...' : hasMore ? 'ЕЩЁ ЛУПЫ' : 'Больше лупов нет'}
+              </button>
             </div>
           )}
         </div>
@@ -413,6 +476,9 @@ function LoopsPage() {
           crossOrigin="anonymous"
         />
       )}
+      
+      {/* Premium Modal */}
+      {/* <PremiumModal /> */}
     </div>
   );
 }

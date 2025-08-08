@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import PremiumModal from '../components/PremiumModal';
 
 function ProducersPage() {
   const [producers, setProducers] = useState([]);
@@ -189,6 +190,9 @@ function ProducersPage() {
           )}
         </div>
       </section>
+      
+      {/* Premium Modal */}
+      {/* <PremiumModal /> */}
     </div>
   );
 }

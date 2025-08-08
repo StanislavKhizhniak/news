@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import PremiumModal from '../components/PremiumModal';
 
 function AboutPage() {
   const [audioError, setAudioError] = useState(false);
@@ -159,6 +160,9 @@ function AboutPage() {
           </div>
         </section>
       </div>
+      
+      {/* Premium Modal */}
+      {/* <PremiumModal /> */}
     </div>
   );
 }

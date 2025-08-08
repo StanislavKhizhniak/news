@@ -44,10 +44,46 @@ function LoopsPage() {
   };
 
   const fetchLoopsChunk = async (offset, limit) => {
-    // Предполагаем, что бэкенд поддерживает offset/limit
-    const url = `https://mycollabs.ru.tuna.am/loops?offset=${offset}&limit=${limit}`;
-    const response = await axios.get(url);
-    return processIncomingData(response.data);
+    const base = `https://mycollabs.ru.tuna.am/loops`;
+    const page1 = Math.floor(offset / Math.max(limit, 1)) + 1; // 1-based
+    const page0 = Math.floor(offset / Math.max(limit, 1));     // 0-based
+
+    const candidates = [
+      `${base}?offset=${offset}&limit=${limit}`,
+      `${base}?page=${page1}&page_size=${limit}`,
+      `${base}?page=${page1}&per_page=${limit}`,
+      `${base}?page=${page1}&size=${limit}`,
+      `${base}?skip=${offset}&take=${limit}`,
+      `${base}?start=${offset}&limit=${limit}`,
+      `${base}?offset=${offset}&count=${limit}`,
+      `${base}?page=${page0}&page_size=${limit}`,
+    ];
+
+    let lastErr = null;
+    for (const url of candidates) {
+      try {
+        const response = await axios.get(url);
+        return processIncomingData(response.data);
+      } catch (err) {
+        // продвигаемся к следующему варианту, если это ошибка валидации/плохого запроса
+        const status = err?.response?.status;
+        if (status === 400 || status === 404 || status === 422) {
+          lastErr = err;
+          continue;
+        }
+        // иные ошибки пробрасываем сразу
+        throw err;
+      }
+    }
+
+    // Финальный фоллбек: забираем весь список и порежем на клиенте
+    try {
+      const response = await axios.get(base);
+      return processIncomingData(response.data);
+    } catch (err) {
+      // если и он упал, отдадим последнюю осмысленную ошибку
+      throw lastErr || err;
+    }
   };
 
   const handlePlayAudio = async (loopId, loopURL) => {

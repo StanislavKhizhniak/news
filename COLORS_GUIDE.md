@@ -152,3 +152,4 @@ const genreColor = getGenreColor('Techno');
 6. **Производительность** - CSS переменные работают быстрее
 
 
+

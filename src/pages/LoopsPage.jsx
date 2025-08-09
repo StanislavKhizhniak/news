@@ -17,7 +17,6 @@ function LoopsPage() {
   const [visibleCount, setVisibleCount] = useState(15); // сколько показываем на странице
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
   const audioRef = useRef(null);
 
   const PAGE_SIZE_DETAILED = 3;
@@ -56,82 +55,14 @@ function LoopsPage() {
     return unique;
   };
 
-  const fetchLoopsPage = async (page, limit) => {
+  const fetchLoops = async (offset, limit) => {
     const base = `https://mycollabs.ru.tuna.am/loops`;
-    const candidates = [
-      `${base}?page=${page}&page_size=${limit}`,
-      `${base}?page=${page}&per_page=${limit}`,
-      `${base}?page=${page}&size=${limit}`,
-    ];
-
-    let lastErr = null;
-    for (const url of candidates) {
-      try {
-        const response = await axios.get(url);
-        return processIncomingData(response.data);
-      } catch (err) {
-        const status = err?.response?.status;
-        if (status === 400 || status === 404 || status === 422) {
-          lastErr = err;
-          continue;
-        }
-        throw err;
-      }
-    }
-
-    // Фоллбек: для первой страницы попробуем базовый эндпоинт без параметров
-    if (page === 1) {
-      try {
-        const response = await axios.get(base);
-        return processIncomingData(response.data);
-      } catch (err) {
-        throw lastErr || err;
-      }
-    }
-    // Для страниц > 1 вернём пусто, чтобы корректно остановить пагинацию
-    return [];
-  };
-
-  const fetchLoopsChunk = async (offset, limit) => {
-    const base = `https://mycollabs.ru.tuna.am/loops`;
-    const page1 = Math.floor(offset / Math.max(limit, 1)) + 1; // 1-based
-    const page0 = Math.floor(offset / Math.max(limit, 1));     // 0-based
-
-    const candidates = [
-      `${base}?offset=${offset}&limit=${limit}`,
-      `${base}?page=${page1}&page_size=${limit}`,
-      `${base}?page=${page1}&per_page=${limit}`,
-      `${base}?page=${page1}&size=${limit}`,
-      `${base}?skip=${offset}&take=${limit}`,
-      `${base}?start=${offset}&limit=${limit}`,
-      `${base}?offset=${offset}&count=${limit}`,
-      `${base}?page=${page0}&page_size=${limit}`,
-    ];
-
-    let lastErr = null;
-    for (const url of candidates) {
-      try {
-        const response = await axios.get(url);
-        return processIncomingData(response.data);
-      } catch (err) {
-        // продвигаемся к следующему варианту, если это ошибка валидации/плохого запроса
-        const status = err?.response?.status;
-        if (status === 400 || status === 404 || status === 422) {
-          lastErr = err;
-          continue;
-        }
-        // иные ошибки пробрасываем сразу
-        throw err;
-      }
-    }
-
-    // Финальный фоллбек: забираем весь список и порежем на клиенте
     try {
-      const response = await axios.get(base);
+      const url = `${base}?offset=${offset}&limit=${limit}`;
+      const response = await axios.get(url);
       return processIncomingData(response.data);
     } catch (err) {
-      // если и он упал, отдадим последнюю осмысленную ошибку
-      throw lastErr || err;
+      throw err;
     }
   };
 
@@ -351,14 +282,12 @@ function LoopsPage() {
         setIsFetchingMore(false);
         setHasMore(true);
         setLoops([]);
-        setCurrentPage(1);
         const pageSize = getPageSize();
         const chunkSize = getCacheChunkSize();
         setVisibleCount(pageSize);
-        const chunk = await fetchLoopsPage(1, chunkSize);
+        const chunk = await fetchLoops(0, chunkSize);
         const unique = dedupeLoops(chunk);
         setLoops(unique);
-        setCurrentPage(2);
         if (!chunk || chunk.length === 0) {
           setHasMore(false);
         }
@@ -386,14 +315,13 @@ function LoopsPage() {
     try {
       setIsFetchingMore(true);
       const chunkSize = getCacheChunkSize();
-      const nextChunk = await fetchLoopsPage(currentPage, chunkSize);
+      const nextOffset = loops.length; // (x-1) * limit
+      const nextChunk = await fetchLoops(nextOffset, chunkSize);
       const merged = dedupeLoops([...loops, ...(nextChunk || [])]);
       const noGrowth = merged.length === loops.length;
       setLoops(merged);
       if (!nextChunk || nextChunk.length === 0 || noGrowth) {
         setHasMore(false);
-      } else {
-        setCurrentPage((prev) => prev + 1);
       }
       setVisibleCount((prev) => prev + pageSize);
     } catch (err) {

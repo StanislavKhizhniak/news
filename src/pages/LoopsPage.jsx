@@ -351,7 +351,11 @@ function LoopsPage() {
     localStorage.setItem('loops_per_page_base', String(perPageBase));
 
     const topUpIfNeeded = async () => {
-      if (isFetchingMore || !hasMore) return;
+      // При смене размера страницы можем снова разрешить подгрузку
+      if (!hasMore && Array.isArray(loops) && loops.length > visibleCount) {
+        setHasMore(true);
+      }
+      if (isFetchingMore) return;
       if (Array.isArray(loops) && loops.length < pageSize) {
         try {
           setIsFetchingMore(true);
@@ -552,19 +556,29 @@ function LoopsPage() {
           {/* Ещё лупы */}
           {Array.isArray(loops) && loops.length > 0 && (
             <div className="mt-10 flex justify-center">
+              {(() => {
+                const hasMoreInCache = visibleCount < loops.length;
+                const canLoadMore = hasMoreInCache || hasMore;
+                const disabled = isFetchingMore || !canLoadMore;
+                const label = isFetchingMore
+                  ? 'Загружаем...'
+                  : canLoadMore
+                  ? 'ЕЩЁ ЛУПЫ'
+                  : 'Больше лупов нет';
+                return (
               <button
                 onClick={handleLoadMore}
-                disabled={isFetchingMore || !hasMore}
+                  disabled={disabled}
                 className={`px-6 py-3 rounded-lg font-semibold transition-colors shadow-sm ${
-                  isFetchingMore
+                  disabled
                     ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                    : hasMore
-                    ? 'bg-purple-600 text-white hover:bg-purple-700'
-                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    : 'bg-purple-600 text-white hover:bg-purple-700'
                 }`}
               >
-                {isFetchingMore ? 'Загружаем...' : hasMore ? 'ЕЩЁ ЛУПЫ' : 'Больше лупов нет'}
+                {label}
               </button>
+                );
+              })()}
             </div>
           )}
         </div>

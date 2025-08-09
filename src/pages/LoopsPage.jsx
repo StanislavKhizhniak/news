@@ -60,13 +60,41 @@ function LoopsPage() {
 
   const fetchLoops = async (offset, limit) => {
     const base = `https://mycollabs.ru.tuna.am/loops`;
-    try {
-      const url = `${base}?offset=${offset}&limit=${limit}`;
-      const response = await axios.get(url);
-      return processIncomingData(response.data);
-    } catch (err) {
-      throw err;
+
+    const smallLimit = getPageSize();
+    const page1 = Math.floor(offset / Math.max(limit, 1)) + 1;
+
+    const candidates = [
+      `${base}?offset=${offset}&limit=${limit}`,
+      `${base}?offset=${offset}&count=${limit}`,
+      `${base}?start=${offset}&limit=${limit}`,
+      `${base}?skip=${offset}&take=${limit}`,
+      `${base}?page=${page1}&page_size=${limit}`,
+      `${base}?page=${page1}&per_page=${limit}`,
+      // Повтор с меньшим лимитом, если сервер не принимает большой
+      `${base}?offset=${offset}&limit=${smallLimit}`,
+      `${base}?offset=${offset}&count=${smallLimit}`,
+      `${base}?start=${offset}&limit=${smallLimit}`,
+      `${base}?skip=${offset}&take=${smallLimit}`,
+      `${base}?page=${page1}&page_size=${smallLimit}`,
+      `${base}?page=${page1}&per_page=${smallLimit}`,
+    ];
+
+    let lastErr = null;
+    for (const url of candidates) {
+      try {
+        const response = await axios.get(url);
+        return processIncomingData(response.data);
+      } catch (err) {
+        const status = err?.response?.status;
+        if (status === 400 || status === 404 || status === 422) {
+          lastErr = err;
+          continue;
+        }
+        throw err;
+      }
     }
+    throw lastErr || new Error('Не удалось получить данные');
   };
 
   const handlePlayAudio = async (loopId, loopURL) => {
@@ -443,12 +471,12 @@ function LoopsPage() {
                   6
                 </button>
                 <button
-                  onClick={() => setPerPageBase(18)}
+                  onClick={() => setPerPageBase(24)}
                   className={`ml-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    perPageBase === 18 ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+                    perPageBase === 24 ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
                   }`}
                 >
-                  18
+                  24
                 </button>
                 <span className="ml-3 text-xs text-gray-500">
                   {viewMode === 'compact' ? `= ${perPageBase * 3} для компактных` : ''}

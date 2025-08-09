@@ -468,19 +468,16 @@ function LoopsPage() {
                     perPageBase === 6 ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
                   }`}
                 >
-                  6
+                  {viewMode === 'compact' ? 6 * 3 : 6}
                 </button>
                 <button
-                  onClick={() => setPerPageBase(24)}
+                  onClick={() => setPerPageBase(18)}
                   className={`ml-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    perPageBase === 24 ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+                    perPageBase === 18 ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
                   }`}
                 >
-                  24
+                  {viewMode === 'compact' ? 18 * 3 : 18}
                 </button>
-                <span className="ml-3 text-xs text-gray-500">
-                  {viewMode === 'compact' ? `= ${perPageBase * 3} для компактных` : ''}
-                </span>
               </div>
             </div>
           </div>

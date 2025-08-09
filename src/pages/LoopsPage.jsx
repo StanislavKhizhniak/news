@@ -336,9 +336,42 @@ function LoopsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode]);
 
-  // При изменении количества "Показывать по" просто переустанавливаем видимую порцию
+  // Инициализация perPageBase из localStorage
   useEffect(() => {
-    setVisibleCount(getPageSize());
+    const saved = Number(localStorage.getItem('loops_per_page_base'));
+    if (saved === 6 || saved === 18) {
+      setPerPageBase(saved);
+    }
+  }, []);
+
+  // При изменении количества "Показывать по" сохраняем выбор и при необходимости догружаем до полного экрана
+  useEffect(() => {
+    const pageSize = getPageSize();
+    setVisibleCount(pageSize);
+    localStorage.setItem('loops_per_page_base', String(perPageBase));
+
+    const topUpIfNeeded = async () => {
+      if (isFetchingMore || !hasMore) return;
+      if (Array.isArray(loops) && loops.length < pageSize) {
+        try {
+          setIsFetchingMore(true);
+          const nextChunk = await fetchLoops(loops.length, pageSize);
+          const merged = dedupeLoops([...(loops || []), ...(nextChunk || [])]);
+          setLoops(merged);
+          const noGrowth = merged.length === loops.length;
+          if (!nextChunk || nextChunk.length === 0 || noGrowth) {
+            setHasMore(false);
+          }
+        } catch (e) {
+          // молча не ломаем UX; кнопка догрузки останется доступной
+          // при ошибке просто не меняем hasMore
+        } finally {
+          setIsFetchingMore(false);
+        }
+      }
+    };
+
+    topUpIfNeeded();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perPageBase, viewMode]);
 

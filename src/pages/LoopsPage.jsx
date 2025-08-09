@@ -15,12 +15,15 @@ function LoopsPage() {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [viewMode, setViewMode] = useState('detailed'); // 'detailed' или 'compact'
   const [visibleCount, setVisibleCount] = useState(15); // сколько показываем на странице
+  const [perPageBase, setPerPageBase] = useState(6); // показывать по N (для компакт умножим на 3)
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const audioRef = useRef(null);
 
-  const PAGE_SIZE_DETAILED = 3;
-  const PAGE_SIZE_COMPACT = 6;
+  // Число карточек на странице зависит от выбора пользователя
+  // Для компактного вида умножаем базовое значение на 3
+  const PAGE_SIZE_DETAILED = perPageBase; // 6 или 18
+  const PAGE_SIZE_COMPACT = perPageBase * 3; // 18 или 54
   const CACHE_CHUNK_DETAILED = 60; // грузим в кэш
   const CACHE_CHUNK_COMPACT = 180;
 
@@ -304,6 +307,12 @@ function LoopsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode]);
 
+  // При изменении количества "Показывать по" просто переустанавливаем видимую порцию
+  useEffect(() => {
+    setVisibleCount(getPageSize());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [perPageBase, viewMode]);
+
   const handleLoadMore = async () => {
     const pageSize = getPageSize();
     const needMoreFromCache = visibleCount + pageSize > loops.length;
@@ -392,34 +401,59 @@ function LoopsPage() {
           <div className="flex flex-col sm:flex-row items-center justify-between mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-0">Доступные лупы</h2>
             
-            {/* Переключатель стилей */}
-            <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('detailed')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'detailed'
-                    ? 'bg-white text-purple-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                <span className="flex items-center">
-                  <span className="mr-2">📋</span>
-                  Подробно
+            {/* Переключатель стилей и "Показывать по" */}
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('detailed')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'detailed'
+                      ? 'bg-white text-purple-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <span className="flex items-center">
+                    <span className="mr-2">📋</span>
+                    Подробно
+                  </span>
+                </button>
+                <button
+                  onClick={() => setViewMode('compact')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'compact'
+                      ? 'bg-white text-purple-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <span className="flex items-center">
+                    <span className="mr-2">📊</span>
+                    Компактно
+                  </span>
+                </button>
+              </div>
+
+              <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                <span className="text-sm text-gray-600 mr-2">Показывать по:</span>
+                <button
+                  onClick={() => setPerPageBase(6)}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    perPageBase === 6 ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  6
+                </button>
+                <button
+                  onClick={() => setPerPageBase(18)}
+                  className={`ml-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    perPageBase === 18 ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  18
+                </button>
+                <span className="ml-3 text-xs text-gray-500">
+                  {viewMode === 'compact' ? `= ${perPageBase * 3} для компактных` : ''}
                 </span>
-              </button>
-              <button
-                onClick={() => setViewMode('compact')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'compact'
-                    ? 'bg-white text-purple-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                <span className="flex items-center">
-                  <span className="mr-2">📊</span>
-                  Компактно
-                </span>
-              </button>
+              </div>
             </div>
           </div>
           

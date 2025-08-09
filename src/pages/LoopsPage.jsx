@@ -28,7 +28,8 @@ function LoopsPage() {
   const CACHE_CHUNK_COMPACT = 180;
 
   const getPageSize = () => (viewMode === 'compact' ? PAGE_SIZE_COMPACT : PAGE_SIZE_DETAILED);
-  const getCacheChunkSize = () => (viewMode === 'compact' ? CACHE_CHUNK_COMPACT : CACHE_CHUNK_DETAILED);
+  // Загружаем за раз столько, сколько показываем на странице
+  const getCacheChunkSize = () => getPageSize();
 
   const processIncomingData = (data) => {
     let processedData = data;

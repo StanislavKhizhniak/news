@@ -3,9 +3,11 @@ import axios from 'axios';
 import LoopCard from '../components/LoopCard';
 import PremiumModal from '../components/PremiumModal';
 import MusicPlayer from '../components/MusicPlayer';
+import TagFilter from '../components/TagFilter';
 
 function LoopsPage() {
   const [loops, setLoops] = useState([]); // кэш загруженных лупов
+  const [filteredLoops, setFilteredLoops] = useState([]); // отфильтрованные лупы
   const [loading, setLoading] = useState(true); // первоначальная загрузка
   const [error, setError] = useState(null);
   const [currentAudio, setCurrentAudio] = useState(null);
@@ -302,6 +304,11 @@ function LoopsPage() {
     }
   };
 
+  const handleFilterChange = (filteredLoops) => {
+    setFilteredLoops(filteredLoops);
+    setVisibleCount(15); // Сбрасываем счетчик видимых лупов при фильтрации
+  };
+
   const handleAudioProgress = () => {
     if (audioRef.current) {
       const progress = (audioRef.current.buffered.length > 0) 
@@ -423,6 +430,11 @@ function LoopsPage() {
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode]);
+
+  // Инициализируем отфильтрованные лупы при загрузке данных
+  useEffect(() => {
+    setFilteredLoops(loops);
+  }, [loops]);
 
   // Инициализация perPageBase из localStorage
   useEffect(() => {
@@ -572,12 +584,9 @@ function LoopsPage() {
                   </span>
                 </button>
                 <button
-                  onClick={() => setViewMode('compact')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'compact'
-                      ? 'bg-white text-purple-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
+                  disabled
+                  className="px-4 py-2 rounded-md text-sm font-medium transition-colors text-gray-400 cursor-not-allowed opacity-50"
+                  title="Компактный режим временно недоступен"
                 >
                   <span className="flex items-center">
                     <span className="mr-2">📊</span>
@@ -594,7 +603,7 @@ function LoopsPage() {
                     perPageBase === 6 ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
                   }`}
                 >
-                  {viewMode === 'compact' ? 6 * 3 : 6}
+                  6
                 </button>
                 <button
                   onClick={() => setPerPageBase(18)}
@@ -602,29 +611,29 @@ function LoopsPage() {
                     perPageBase === 18 ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
                   }`}
                 >
-                  {viewMode === 'compact' ? 18 * 3 : 18}
+                  18
                 </button>
               </div>
             </div>
           </div>
           
-          {!Array.isArray(loops) || loops.length === 0 ? (
+          {/* Фильтр по тегам */}
+          <TagFilter loops={loops} onFilterChange={handleFilterChange} />
+          
+          {!Array.isArray(filteredLoops) || filteredLoops.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-gray-400 text-6xl mb-4">🎵</div>
               <h3 className="text-xl font-semibold text-gray-600 mb-2">Нет данных</h3>
               <p className="text-gray-500">В данный момент нет доступных лупов</p>
               <div className="mt-4 p-4 bg-gray-100 rounded-lg">
                 <p className="text-sm text-gray-600">
-                  Полученные данные: {JSON.stringify(loops, null, 2)}
+                  Полученные данные: {JSON.stringify(filteredLoops, null, 2)}
                 </p>
               </div>
             </div>
           ) : (
-            <div className={`overflow-visible ${viewMode === 'compact' 
-              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" 
-              : "grid grid-cols-1 gap-6 max-w-4xl mx-auto"
-            }`}>
-              {loops.slice(0, visibleCount).map((item, index) => (
+            <div className="overflow-visible grid grid-cols-1 gap-6 max-w-4xl mx-auto">
+              {filteredLoops.slice(0, visibleCount).map((item, index) => (
                 <LoopCard
                   key={`${item?.loop?.loop_id ?? item?.loop?.title ?? 'i'}-${index}`}
                   item={item}
@@ -636,17 +645,17 @@ function LoopsPage() {
                   downloadProgress={downloadProgress}
                   onPlayAudio={handlePlayAudio}
                   onDownload={handleDownload}
-                  compact={viewMode === 'compact'}
+                  compact={false}
                   isPlayerOpen={isPlayerOpen}
                 />
               ))}
             </div>
           )}
           {/* Ещё лупы */}
-          {Array.isArray(loops) && loops.length > 0 && (
+          {Array.isArray(filteredLoops) && filteredLoops.length > 0 && (
             <div className="mt-10 flex justify-center">
               {(() => {
-                const hasMoreInCache = visibleCount < loops.length;
+                const hasMoreInCache = visibleCount < filteredLoops.length;
                 const canLoadMore = hasMoreInCache || hasMore;
                 const disabled = isFetchingMore || !canLoadMore;
                 const label = isFetchingMore

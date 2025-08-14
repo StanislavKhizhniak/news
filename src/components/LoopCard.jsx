@@ -97,6 +97,25 @@ function LoopCard({
                   </div>
                 )}
               </div>
+              
+              {/* Теги */}
+              {item.loop?.tags && Array.isArray(item.loop.tags) && item.loop.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {item.loop.tags.slice(0, 3).map((tag, tagIndex) => (
+                    <span 
+                      key={tagIndex}
+                      className="inline-block text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                  {item.loop.tags.length > 3 && (
+                    <span className="inline-block text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                      +{item.loop.tags.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           
@@ -205,6 +224,20 @@ function LoopCard({
               </div>
             )}
             </div>
+            
+            {/* Теги */}
+            {item.loop?.tags && Array.isArray(item.loop.tags) && item.loop.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {item.loop.tags.map((tag, tagIndex) => (
+                  <span 
+                    key={tagIndex}
+                    className="inline-block text-sm px-3 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors cursor-pointer"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         

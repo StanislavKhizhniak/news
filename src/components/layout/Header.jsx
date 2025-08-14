@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ThemeToggle from '../ThemeToggle';
 
-function Header({ currentPage, onPageChange }) {
+function Header({ currentPage, onPageChange, onOpenAuthModal }) {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -61,6 +61,12 @@ function Header({ currentPage, onPageChange }) {
           </nav>
           
           <div className="flex items-center space-x-4">
+            <button
+              onClick={onOpenAuthModal}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-md transition-colors duration-200"
+            >
+              Войти
+            </button>
             <ThemeToggle />
             <div className="md:hidden">
               <button className="text-secondary hover:text-primary">

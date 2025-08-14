@@ -5,12 +5,15 @@ import AboutPage from './pages/AboutPage';
 import ProducersPage from './pages/ProducersPage';
 import LoopsPage from './pages/LoopsPage';
 import IntroAnimation from './application/IntroAnimation';
+import AuthModal from './components/AuthModal';
+import AdBanners from './components/AdBanners';
 import { ThemeProvider } from './context/ThemeContext';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [showIntro, setShowIntro] = useState(true);
   const [isFirstVisit, setIsFirstVisit] = useState(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   useEffect(() => {
     // Проверяем, был ли пользователь уже на сайте
@@ -50,9 +53,18 @@ function App() {
 
   return (
     <ThemeProvider>
-      <Layout currentPage={currentPage} onPageChange={setCurrentPage}>
+      <AdBanners />
+      <Layout 
+        currentPage={currentPage} 
+        onPageChange={setCurrentPage}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+      >
         {renderPage()}
       </Layout>
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+      />
     </ThemeProvider>
   );
 }

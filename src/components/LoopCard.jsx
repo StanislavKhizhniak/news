@@ -11,10 +11,21 @@ function LoopCard({
   downloadProgress, 
   onPlayAudio, 
   onDownload,
-  compact = false
+  compact = false,
+  isPlayerOpen = false
 }) {
+  const isCurrentlyPlaying = playingLoopId === item.loop?.loop_id;
+  const isSelected = isCurrentlyPlaying && isPlayerOpen;
+  const isPaused = isCurrentlyPlaying && !isPlayerOpen;
+  const isTrackSelected = isCurrentlyPlaying; // Карточка выбрана, если трек активен (играет или на паузе)
+  
   return (
-    <div key={item.loop?.loop_id || index} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow relative">
+    <div 
+      key={item.loop?.loop_id || index} 
+      className={`rounded-lg shadow-md hover:shadow-lg transition-all duration-200 relative ${
+        isTrackSelected ? 'bg-purple-50 dark:bg-purple-900/20 ring-2 ring-purple-500 shadow-lg' : 'bg-white'
+      }`}
+    >
       {/* Уведомление LABS в стиле мессенджера */}
       {item.loop?.need_labs && (
         <div className="absolute top-3 right-3 z-10">
@@ -36,25 +47,9 @@ function LoopCard({
           )}
           <div className="flex items-center mb-3">
             <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 mr-3">
-              <picture>
-                <source 
-                  srcSet={item.user?.avatar_URL?.replace(/\.(jpg|jpeg|png|gif|bmp|tiff)$/i, '.webp') || '/images/default-avatar.webp'} 
-                  type="image/webp"
-                />
-                <source 
-                  srcSet={item.user?.avatar_URL?.replace(/\.(jpg|jpeg|png|gif|bmp|tiff)$/i, '.avif') || '/images/default-avatar.avif'} 
-                  type="image/avif"
-                />
-                <source 
-                  srcSet={item.user?.avatar_URL?.replace(/\.(webp|avif|gif|bmp|tiff)$/i, '.jpg') || '/images/default-avatar.jpg'} 
-                  type="image/jpeg"
-                />
-                <source 
-                  srcSet={item.user?.avatar_URL?.replace(/\.(webp|avif|jpg|jpeg|gif|bmp|tiff)$/i, '.png') || '/images/default-avatar.png'} 
-                  type="image/png"
-                />
+              {item.user?.avatar_URL ? (
                 <img 
-                  src={item.user?.avatar_URL || '/images/default-avatar.jpg'} 
+                  src={item.user.avatar_URL} 
                   alt={item.user?.nickname || 'User'}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -62,8 +57,8 @@ function LoopCard({
                     e.target.nextSibling.style.display = 'block';
                   }}
                 />
-              </picture>
-              <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm" style={{display: 'none'}}>
+              ) : null}
+              <div className={`w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm ${item.user?.avatar_URL ? 'hidden' : 'block'}`}>
                 {item.user?.nickname?.charAt(0)?.toUpperCase() || 'U'}
               </div>
             </div>
@@ -122,15 +117,15 @@ function LoopCard({
               }} 
               disabled={audioLoading && playingLoopId === item.loop?.loop_id}
               className={`flex-1 px-3 py-2 rounded-lg transition-colors text-xs ${
-                playingLoopId === item.loop?.loop_id 
+                isTrackSelected 
                   ? 'bg-red-600 hover:bg-red-700 text-white' 
                   : 'bg-purple-600 hover:bg-purple-700 text-white'
-              } ${audioLoading && playingLoopId === item.loop?.loop_id ? 'opacity-50 cursor-not-allowed' : ''}`}
+              } ${audioLoading && isCurrentlyPlaying ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {audioLoading && playingLoopId === item.loop?.loop_id 
+              {audioLoading && isCurrentlyPlaying 
                 ? `⏳ ${Math.round(audioProgress)}%` 
-                : playingLoopId === item.loop?.loop_id 
-                  ? '⏹️' 
+                : isTrackSelected 
+                  ? (isCurrentlyPlaying ? '⏸️' : '▶️')
                   : '▶️'
               }
             </button>
@@ -155,25 +150,9 @@ function LoopCard({
         <div className="p-4 sm:p-6 overflow-visible">
           <div className="flex flex-col sm:flex-row items-start sm:items-center mb-4 gap-4">
             <div className="w-24 h-24 sm:w-20 sm:h-20 rounded-full overflow-hidden flex-shrink-0">
-            <picture>
-              <source 
-                srcSet={item.user?.avatar_URL?.replace(/\.(jpg|jpeg|png|gif|bmp|tiff)$/i, '.webp') || '/images/default-avatar.webp'} 
-                type="image/webp"
-              />
-              <source 
-                srcSet={item.user?.avatar_URL?.replace(/\.(jpg|jpeg|png|gif|bmp|tiff)$/i, '.avif') || '/images/default-avatar.avif'} 
-                type="image/avif"
-              />
-              <source 
-                srcSet={item.user?.avatar_URL?.replace(/\.(webp|avif|gif|bmp|tiff)$/i, '.jpg') || '/images/default-avatar.jpg'} 
-                type="image/jpeg"
-              />
-              <source 
-                srcSet={item.user?.avatar_URL?.replace(/\.(webp|avif|jpg|jpeg|gif|bmp|tiff)$/i, '.png') || '/images/default-avatar.png'} 
-                type="image/png"
-              />
+            {item.user?.avatar_URL ? (
               <img 
-                src={item.user?.avatar_URL || '/images/default-avatar.jpg'} 
+                src={item.user.avatar_URL} 
                 alt={item.user?.nickname || 'User'}
                 className="w-full h-full object-cover"
                 onError={(e) => {
@@ -181,8 +160,8 @@ function LoopCard({
                   e.target.nextSibling.style.display = 'block';
                 }}
               />
-            </picture>
-            <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg" style={{display: 'none'}}>
+            ) : null}
+            <div className={`w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg ${item.user?.avatar_URL ? 'hidden' : 'block'}`}>
               {item.user?.nickname?.charAt(0)?.toUpperCase() || 'U'}
             </div>
           </div>
@@ -264,17 +243,17 @@ function LoopCard({
               
               onPlayAudio(item.loop?.loop_id, tempUrl);
             }} 
-            disabled={audioLoading && playingLoopId === item.loop?.loop_id}
+            disabled={audioLoading && isCurrentlyPlaying}
             className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${
-              playingLoopId === item.loop?.loop_id 
+              isTrackSelected 
                 ? 'bg-red-600 hover:bg-red-700 text-white' 
                 : 'bg-purple-600 hover:bg-purple-700 text-white'
-            } ${audioLoading && playingLoopId === item.loop?.loop_id ? 'opacity-50 cursor-not-allowed' : ''}`}
+            } ${audioLoading && isCurrentlyPlaying ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {audioLoading && playingLoopId === item.loop?.loop_id 
+            {audioLoading && isCurrentlyPlaying 
               ? `⏳ Загрузка ${Math.round(audioProgress)}%` 
-              : playingLoopId === item.loop?.loop_id 
-                ? '⏹️ Остановить' 
+              : isTrackSelected 
+                ? (isCurrentlyPlaying ? '⏸️ Пауза' : '▶️ Продолжить')
                 : '▶️ Слушать'
             }
           </button>

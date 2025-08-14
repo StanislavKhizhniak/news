@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import LoopCard from '../components/LoopCard';
 import PremiumModal from '../components/PremiumModal';
+import MusicPlayer from '../components/MusicPlayer';
 
 function LoopsPage() {
   const [loops, setLoops] = useState([]); // кэш загруженных лупов
@@ -13,6 +14,11 @@ function LoopsPage() {
   const [audioProgress, setAudioProgress] = useState(0);
   const [downloadingLoopId, setDownloadingLoopId] = useState(null);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [isPlayerOpen, setIsPlayerOpen] = useState(false);
+  const [currentTrack, setCurrentTrack] = useState(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
   const [viewMode, setViewMode] = useState('detailed'); // 'detailed' или 'compact'
   const [visibleCount, setVisibleCount] = useState(15); // сколько показываем на странице
   const [perPageBase, setPerPageBase] = useState(6); // показывать по N (для компакт умножим на 3)
@@ -99,30 +105,48 @@ function LoopsPage() {
   };
 
   const handlePlayAudio = async (loopId, loopURL) => {
+    // Если нажимаем на тот же луп, переключаем воспроизведение/паузу
+    if (playingLoopId === loopId) {
+      if (isPlayerOpen) {
+        // Если плеер открыт, ставим на паузу
+        setPlayingLoopId(null);
+      } else {
+        // Если плеер закрыт, но трек был выбран, продолжаем воспроизведение
+        setPlayingLoopId(loopId);
+        setIsPlayerOpen(true);
+      }
+      return;
+    }
+
     // Остановить текущее воспроизведение
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
 
-    // Если нажимаем на тот же луп, просто останавливаем
-    if (playingLoopId === loopId) {
-      setPlayingLoopId(null);
-      setCurrentAudio(null);
-      setAudioLoading(false);
-      setAudioProgress(0);
-      return;
-    }
-
     try {
       setAudioLoading(true);
+      
+      // Найдем информацию о треке
+      const currentLoop = loops.find(loop => loop.loop?.loop_id === loopId);
+      if (currentLoop) {
+        setCurrentTrack({
+          id: loopId,
+          title: currentLoop.loop?.title || 'Без названия',
+          artist: currentLoop.user?.nickname || 'Неизвестный артист',
+          avatarUrl: currentLoop.user?.avatar_URL || null,
+          audioUrl: null // Будет установлено ниже
+        });
+      }
       
       // Если у нас есть временная ссылка, используем её напрямую
       if (loopURL && (loopURL.startsWith('http') || loopURL.startsWith('https'))) {
         console.log('Используем прямую ссылку:', loopURL);
         setCurrentAudio(loopURL);
+        setCurrentTrack(prev => prev ? { ...prev, audioUrl: loopURL } : null);
         setPlayingLoopId(loopId);
         setAudioLoading(false);
+        setIsPlayerOpen(true);
         return;
       }
       
@@ -157,8 +181,10 @@ function LoopsPage() {
           if (response.headers.get('content-type') && response.headers.get('content-type').includes('audio/')) {
             console.log('Сервер возвращает аудио файл напрямую');
             setCurrentAudio(url);
+            setCurrentTrack(prev => prev ? { ...prev, audioUrl: url } : null);
             setPlayingLoopId(loopId);
             setAudioLoading(false);
+            setIsPlayerOpen(true);
           } else {
             throw new Error('Сервер не вернул аудио файл');
           }
@@ -191,16 +217,20 @@ function LoopsPage() {
     console.log('Аудио воспроизведение завершено');
     setPlayingLoopId(null);
     setCurrentAudio(null);
+    setCurrentTrack(null);
     setAudioLoading(false);
     setAudioProgress(0);
+    setIsPlayerOpen(false);
   };
 
   const handleAudioError = (error) => {
     console.error('Ошибка воспроизведения аудио:', error);
     setPlayingLoopId(null);
     setCurrentAudio(null);
+    setCurrentTrack(null);
     setAudioLoading(false);
     setAudioProgress(0);
+    setIsPlayerOpen(false);
     alert('Ошибка воспроизведения аудио. Возможно, файл недоступен или временная ссылка истекла.');
   };
 
@@ -212,6 +242,64 @@ function LoopsPage() {
   const handleAudioCanPlay = () => {
     console.log('Аудио готово к воспроизведению');
     setAudioLoading(false);
+  };
+
+  const handlePlayerPlay = () => {
+    if (audioRef.current) {
+      audioRef.current.play().catch(console.error);
+    }
+    setPlayingLoopId(currentTrack?.id);
+  };
+
+  const handlePlayerPause = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    setPlayingLoopId(null);
+  };
+
+  const handlePlayerClose = () => {
+    // Полностью останавливаем трек
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setPlayingLoopId(null);
+    setCurrentAudio(null);
+    setCurrentTrack(null);
+    setAudioLoading(false);
+    setAudioProgress(0);
+    setIsPlayerOpen(false);
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      const current = audioRef.current.currentTime;
+      const total = audioRef.current.duration;
+      
+      if (!isNaN(current) && current >= 0 && current !== Infinity) {
+        setCurrentTime(current);
+      }
+      if (!isNaN(total) && total > 0 && total !== Infinity) {
+        setDuration(total);
+      }
+    }
+  };
+
+  const handleSeek = (e) => {
+    if (audioRef.current) {
+      const newTime = (e.target.value / 100) * duration;
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const handleVolumeChange = (e) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume;
+    }
   };
 
   const handleAudioProgress = () => {
@@ -549,6 +637,7 @@ function LoopsPage() {
                   onPlayAudio={handlePlayAudio}
                   onDownload={handleDownload}
                   compact={viewMode === 'compact'}
+                  isPlayerOpen={isPlayerOpen}
                 />
               ))}
             </div>
@@ -594,6 +683,8 @@ function LoopsPage() {
           onLoadStart={handleAudioLoadStart}
           onCanPlay={handleAudioCanPlay}
           onProgress={handleAudioProgress}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleTimeUpdate}
           style={{ display: 'none' }}
           autoPlay
           preload="metadata"
@@ -601,6 +692,25 @@ function LoopsPage() {
           crossOrigin="anonymous"
         />
       )}
+
+      {/* Музыкальный плеер */}
+      <MusicPlayer
+        isOpen={isPlayerOpen}
+        currentTrack={currentTrack}
+        isPlaying={playingLoopId === currentTrack?.id}
+        audioLoading={audioLoading}
+        audioProgress={audioProgress}
+        onPlay={handlePlayerPlay}
+        onPause={handlePlayerPause}
+        onClose={handlePlayerClose}
+        audioRef={audioRef}
+        currentTime={currentTime}
+        duration={duration}
+        onTimeUpdate={handleTimeUpdate}
+        onSeek={handleSeek}
+        onVolumeChange={handleVolumeChange}
+        volume={volume}
+      />
       
       {/* Premium Modal */}
       {/* <PremiumModal /> */}

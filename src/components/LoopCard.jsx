@@ -69,7 +69,7 @@ function LoopCard({
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-semibold text-gray-800 truncate">
-                {item.loop?.loop_name || 'Без названия'}
+                {item.loop?.title || 'Без названия'}
               </h3>
               <div className="flex items-center gap-1 mt-1">
                 <p className="text-xs text-gray-500 truncate">{item.user?.nickname || 'Неизвестный артист'}</p>
@@ -135,7 +135,7 @@ function LoopCard({
               }
             </button>
             <button 
-              onClick={() => onDownload(item.loop?.loop_id, item.loop?.loop_name)}
+              onClick={() => onDownload(item.loop?.loop_id, item.loop?.title)}
               disabled={downloadingLoopId === item.loop?.loop_id}
               className={`flex-1 px-3 py-2 rounded-lg transition-colors text-xs ${
                 downloadingLoopId === item.loop?.loop_id 
@@ -188,7 +188,7 @@ function LoopCard({
           </div>
           <div className="flex-1 w-full">
             <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">
-              {item.loop?.loop_name || 'Без названия'}
+              {item.loop?.title || 'Без названия'}
             </h3>
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <p className="text-sm text-gray-500">{item.user?.nickname || 'Неизвестный артист'}</p>
@@ -279,7 +279,7 @@ function LoopCard({
             }
           </button>
           <button 
-            onClick={() => onDownload(item.loop?.loop_id, item.loop?.loop_name)}
+            onClick={() => onDownload(item.loop?.loop_id, item.loop?.title)}
             disabled={downloadingLoopId === item.loop?.loop_id}
             className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${
               downloadingLoopId === item.loop?.loop_id 

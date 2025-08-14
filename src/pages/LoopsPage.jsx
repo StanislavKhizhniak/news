@@ -51,7 +51,7 @@ function LoopsPage() {
     const seen = new Set();
     const unique = [];
     for (const item of items || []) {
-      const key = item?.loop?.loop_id ?? item?.loop?.loop_name ?? item?.id ?? JSON.stringify(item);
+      const key = item?.loop?.loop_id ?? item?.loop?.title ?? item?.id ?? JSON.stringify(item);
       if (seen.has(key)) continue;
       seen.add(key);
       unique.push(item);
@@ -132,11 +132,11 @@ function LoopsPage() {
           // Найдем луп в данных, чтобы получить имя файла
           const currentLoop = loops.find(loop => loop.loop?.loop_id === loopId);
           
-          if (!currentLoop || !currentLoop.loop?.loop_name) {
+          if (!currentLoop || !currentLoop.loop?.title) {
             throw new Error('Не удалось найти имя файла для лупа');
           }
           
-          const filename = currentLoop.loop.loop_name;
+          const filename = currentLoop.loop.title;
           console.log('Получаем временную ссылку для файла:', filename);
           
           // Отправляем GET запрос с именем файла в URL (без параметра download)
@@ -538,7 +538,7 @@ function LoopsPage() {
             }`}>
               {loops.slice(0, visibleCount).map((item, index) => (
                 <LoopCard
-                  key={`${item?.loop?.loop_id ?? item?.loop?.loop_name ?? 'i'}-${index}`}
+                  key={`${item?.loop?.loop_id ?? item?.loop?.title ?? 'i'}-${index}`}
                   item={item}
                   index={index}
                   playingLoopId={playingLoopId}

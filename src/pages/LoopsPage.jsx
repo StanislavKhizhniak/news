@@ -68,7 +68,7 @@ function LoopsPage() {
   };
 
   const fetchLoops = async (offset, limit) => {
-    const base = `https://mycollabs.ru.tuna.am/loops`;
+    const base = `https://my-collab-connect.ru.tuna.am/loops`;
 
     const smallLimit = getPageSize();
     const page1 = Math.floor(offset / Math.max(limit, 1)) + 1;
@@ -166,7 +166,7 @@ function LoopsPage() {
           console.log('Получаем временную ссылку для файла:', filename);
           
           // Отправляем GET запрос с именем файла в URL (без параметра download)
-          const url = `https://mycollabs.ru.tuna.am/loops/${encodeURIComponent(filename)}`;
+          const url = `https://my-collab-connect.ru.tuna.am/loops/${encodeURIComponent(filename)}`;
           console.log('Отправляем запрос на URL для воспроизведения:', url);
           
           // Используем fetch для лучшего контроля над загрузкой
@@ -324,7 +324,7 @@ function LoopsPage() {
       console.log('Начинаем скачивание файла:', filename);
       
       // Используем URL с параметром download=True
-      const downloadUrl = `https://mycollabs.ru.tuna.am/loops/${encodeURIComponent(filename)}?download=True`;
+              const downloadUrl = `https://my-collab-connect.ru.tuna.am/loops/${encodeURIComponent(filename)}?download=True`;
       
       // Используем fetch для принудительного скачивания
       console.log('Загружаем файл для скачивания с параметром download=True...');

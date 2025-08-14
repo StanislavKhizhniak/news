@@ -37,7 +37,7 @@ function ProducersPage() {
       try {
         setLoading(true);
         
-        const response = await axios.get('https://mycollabs.ru.tuna.am/producers/');
+        const response = await axios.get('https://my-collab-connect.ru.tuna.am/producers/');
         let data = response.data;
         
         // Обработка различных форматов данных

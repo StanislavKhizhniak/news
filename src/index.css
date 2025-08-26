@@ -140,6 +140,54 @@
   border: none;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
+
+/* Анимация для waveform bars */
+@keyframes waveform {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.2);
+  }
+}
+
+/* Стили для музыкального плеера */
+.music-player-waveform {
+  animation: waveform 1s ease-in-out infinite;
+}
+
+/* Улучшенные стили для кнопок плеера */
+.music-player-btn {
+  transition: all 0.2s ease-in-out;
+}
+
+.music-player-btn:hover {
+  transform: scale(1.05);
+}
+
+.music-player-btn:active {
+  transform: scale(0.95);
+}
+
+/* Стили для прогресс-бара */
+.music-player-progress {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.music-player-progress:hover {
+  opacity: 0.8;
+}
+
+/* Стили для volume slider */
+.volume-slider-container {
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.volume-slider-container:hover {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
 .text-muted { color: var(--color-text-muted); }
 
 .border-primary { border-color: var(--color-border); }

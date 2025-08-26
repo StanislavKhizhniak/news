@@ -37,7 +37,7 @@ function ProducersPage() {
       try {
         setLoading(true);
         
-        const response = await axios.get('https://my-collab-connect.ru.tuna.am/producers/');
+        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_PRODUCERS_ENDPOINT}/`);
         let data = response.data;
         
         // Обработка различных форматов данных
